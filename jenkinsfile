@@ -1,0 +1,23 @@
+pipeline {
+    agent {
+        label "ec2"
+    }
+
+    stages {
+        stage('Donwload the Code from GIthub') {  //job1
+            steps {
+                sh "yum install git -y"
+                git branch: 'main', url:'https://github.com/kaushalacts/PythonAppDevOps.git'
+                echo "code downloaded successfully."
+                }
+            }
+        stage('Unit Testing') { //job2
+            steps{
+                sh "yum install python3 pip -y"
+                sh "pip3 install -r requirements.txt"
+                sh "pytest"
+            }
+        }
+         
+    }
+}
