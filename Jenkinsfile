@@ -5,7 +5,6 @@ pipeline {
     
 
     stages {
-        stages{
     stage("hello world"){
         steps{
             echo "hi jenkins"
