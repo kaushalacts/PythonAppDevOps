@@ -2,22 +2,21 @@ pipeline {
     agent {
         label "ec2"
     }
+    
 
     stages {
-        stage('Donwload the Code from GIthub') {  //job1
+        stages{
+    stage("hello world"){
+        steps{
+            echo "hi jenkins"
+        }
+    }
+        stage("Deployment on PROD ENV") {  //job1
             steps {
-                sh "yum install git -y"
-                git branch: 'main', url:'https://github.com/kaushalacts/PythonAppDevOps.git'
-                echo "code downloaded successfully."
+                sh "docker rm -f webos"
+                sh "docker pull thehiddenboy143/gfgdevops20flask"
+                sh "docker run -dit --name webos -p 80:80 thehiddenboy143/gfgdevops20flask"
                 }
             }
-        stage('Unit Testing') { //job2
-            steps{
-                sh "yum install python3 pip -y"
-                sh "pip3 install -r requirements.txt"
-                sh "pytest"
-            }
-        }
-         
     }
 }
