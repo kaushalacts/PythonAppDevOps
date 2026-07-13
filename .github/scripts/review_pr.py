@@ -1,7 +1,6 @@
 import os
 import sys
 import requests
-from anthropic import Anthropic
 
 MAX_DIFF_CHARS = 100_000  # keep well within context, avoid huge token cost
 
@@ -32,20 +31,26 @@ Format your response as GitHub-flavored markdown with these sections:
 ## Verdict (Approve / Request Changes / Comment)
 
 Diff:
-```
-{diff}
-```
+
+
 """
 
 
-def review_with_claude(diff):
-    client = Anthropic(api_key=os.environ["ANTHROPIC_API_KEY"])
-    message = client.messages.create(
-        model="claude-sonnet-4-6",
-        max_tokens=2000,
-        messages=[{"role": "user", "content": build_prompt(diff)}],
-    )
-    return "".join(block.text for block in message.content if block.type == "text")
+def review_with_github_models(diff):
+    token = os.environ["GITHUB_TOKEN"]
+    url = "https://models.github.ai/inference/chat/completions"
+    headers = {
+        "Authorization": f"Bearer {token}",
+        "Content-Type": "application/json",
+    }
+    payload = {
+        "model": "openai/gpt-4o-mini",
+        "messages": [{"role": "user", "content": build_prompt(diff)}],
+        "max_tokens": 2000,
+    }
+    resp = requests.post(url, headers=headers, json=payload)
+    resp.raise_for_status()
+    return resp.json()["choices"][0]["message"]["content"]
 
 
 def post_comment(body):
@@ -69,13 +74,13 @@ def main():
         return
 
     try:
-        review = review_with_claude(diff)
+        review = review_with_github_models(diff)
     except Exception as e:
-        print(f"Error calling Claude API: {e}", file=sys.stderr)
+        print(f"Error calling GitHub Models API: {e}", file=sys.stderr)
         post_comment(f"**AI PR Review failed:** {e}")
         sys.exit(1)
 
-    comment = f"## 🤖 AI PR Review\n\n{review}\n\n---\n*Generated automatically by Claude.*"
+    comment = f"## 🤖 AI PR Review\n\n{review}\n\n---\n*Generated automatically via GitHub Models.*"
     post_comment(comment)
 
 
